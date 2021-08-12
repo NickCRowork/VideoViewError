@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="VideoViewError.Views.VideoPlayerPage"
+             xmlns:xct="http://xamarin.com/schemas/2020/toolkit" 
+             xmlns:viewmodels="clr-namespace:VideoViewError.ViewModels"
+             x:DataType="viewmodels:VideoPlayerViewModel">
+
+
+    <Grid x:Name="VideoGrid" Margin="40">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="450"></RowDefinition>
+        </Grid.RowDefinitions>
+        <xct:MediaElement Grid.Row="0" Source="https://uwt-testing.s3.us-east-2.amazonaws.com/Coffee_test.mp4" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand" ShowsPlaybackControls="False">
+        </xct:MediaElement>
+    </Grid>
+
+
+</ContentPage>

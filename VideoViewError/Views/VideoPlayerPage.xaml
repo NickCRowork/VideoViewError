@@ -15,7 +15,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="450"></RowDefinition>
         </Grid.RowDefinitions>
-        <xct:MediaElement Grid.Row="0" Source="https://uwt-testing.s3.us-east-2.amazonaws.com/Coffee_test.mp4" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand" ShowsPlaybackControls="False">
+        <xct:MediaElement Grid.Row="0" Source="https://uwt-testing.s3.us-east-2.amazonaws.com/Coffee_test.m4" VerticalOptions="FillAndExpand" HorizontalOptions="FillAndExpand" ShowsPlaybackControls="False">
         </xct:MediaElement>
     </Grid>
 

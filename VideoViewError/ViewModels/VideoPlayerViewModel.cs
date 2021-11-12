@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Xamarin.Essentials;
 using Xamarin.Forms;
@@ -10,15 +11,13 @@ namespace VideoViewError.ViewModels
 {
     class VideoPlayerViewModel : BaseViewModel
     {
-        private string videosource;
-        public string VideoSource
-        {
-            get => videosource;
-            set => SetProperty(ref videosource, value);
-        }
+        private bool endReached = false;
+        public Command SendGoBack { get; }
+
 
         public VideoPlayerViewModel()
         {
+            SendGoBack = new Command(NavigateBack);
             Initialize();
         }
 
@@ -44,22 +43,40 @@ namespace VideoViewError.ViewModels
         {
             Core.Initialize();
             LibVLC = new LibVLC(enableDebugLogs: true);
+
             libVLC.Log += LibVLC_Log;
-            var media = new Media(LibVLC, new Uri("http://streams.videolan.org/streams/mkv/multiple_tracks.mkv"));
+            var media = new Media(LibVLC, new Uri("https://uwt-testing.s3.us-east-2.amazonaws.com/Coffee_test.mp4"));
+            MediaConfiguration mediaConfiguration = new MediaConfiguration();
+            mediaConfiguration.FileCaching = 18000;
+            mediaConfiguration.NetworkCaching = 18000;
+            media.AddOption(mediaConfiguration);
 
             MediaPlayer = new MediaPlayer(LibVLC)
             {
                 Media = media,
                 EnableHardwareDecoding = false
             };
+
+
             var success = MediaPlayer.SetRole(MediaPlayerRole.Video);
-            MediaPlayer.EndReached += MediaPlayer_EndReached;
-            MediaPlayer.EncounteredError += MediaPlayer_EndReached;
+            MediaPlayer.EndReached += (sender, args) => ThreadPool.QueueUserWorkItem(_ => MediaPlayer_EndReached(sender, args));
+            MediaPlayer.EncounteredError += (sender, args) => ThreadPool.QueueUserWorkItem(_ => MediaPlayer_EndReached(sender, args));
+            MediaPlayer.ToggleFullscreen();
             var count = MediaPlayer.VoutCount;
 
             media.Dispose();
             IsMediaPlayerReady = true;
             Play();
+
+            Device.StartTimer(TimeSpan.FromMilliseconds(100), () =>
+            {
+                if (endReached)
+                {
+                    Device.BeginInvokeOnMainThread(() => NavigateBack());
+                    return false;
+                }
+                return true;
+            });
         }
 
         private void LibVLC_Log(object sender, LogEventArgs e)
@@ -69,7 +86,7 @@ namespace VideoViewError.ViewModels
 
         private void MediaPlayer_EndReached(object sender, EventArgs e)
         {
-            NavigateBack();
+            endReached = true;
         }
 
         public void OnAppearing()
@@ -80,8 +97,12 @@ namespace VideoViewError.ViewModels
 
         internal void OnDisappearing()
         {
-            //MediaPlayer.Dispose();
-            LibVLC.Dispose();
+            if (MediaPlayer?.State == VLCState.Playing)
+            {
+                MediaPlayer?.Stop();
+            }
+            ThreadPool.QueueUserWorkItem(_ => MediaPlayer?.Dispose());
+            ThreadPool.QueueUserWorkItem(_ => LibVLC.Dispose());
         }
 
         public void OnVideoViewInitialized()
@@ -98,9 +119,23 @@ namespace VideoViewError.ViewModels
             }
         }
 
+
+
+        //Return to previous page
         private async void NavigateBack()
         {
-            await Shell.Current.Navigation.PopModalAsync();
+            try
+            {
+                while (Application.Current.MainPage.Navigation.ModalStack.Count <= 0)
+                {
+                    Console.WriteLine("Trying to pop a page that hasn't been pushed yet.");//Spinning shouldn't be done, but can't think of any other way to do this
+                }
+                await Application.Current.MainPage.Navigation.PopModalAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
         }
     }
 }
